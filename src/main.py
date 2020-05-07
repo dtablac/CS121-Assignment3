@@ -126,11 +126,5 @@ if __name__ == '__main__':
         if len(postings) > 1:
             print('{} : {}'.format(word, postings))
     print('Number of documents: {}'.format(doc_id_counter-1))
-<<<<<<< HEAD
     print('Unique Keys: {}'.format(len(list(inverted_index.keys()))))
     print('Size of index: {} kilobytes'.format(sys.getsizeof(inverted_index)/ 1000))
-=======
-    print('Unique keys: {}'.format(len(list(inverted_index.keys()))))
-    print('Size of index: {} kilobytes'.format(sys.getsizeof(inverted_index) / 1000))
-    
->>>>>>> 6a785e80946394d9374fb04a2eec948aff8396fc
