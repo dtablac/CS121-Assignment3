@@ -1,6 +1,6 @@
 # main.py
 # Dan Tablac: 59871000
-# Anthony Esmeralda: [ID]
+# Anthony Esmeralda: 45111521
 
 # Just testing that the program can go through all the folders in the directory
 # and print the url found in each json file in each folder
@@ -13,6 +13,7 @@ import json
 import re
 import sys
 import string
+from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
 from PartA import computeWordFrequencies
 
@@ -24,6 +25,7 @@ inverted_index = dict()      # Store word(str) -> posting(list) pairings.
 
 doc_ids = dict()    # Store doc_id -> doc_name pairings
 
+ps = PorterStemmer()
 # ---------- Index Implementation ---------- #
 
 # store postings in python STL list
@@ -101,6 +103,7 @@ def access_json_files(root):
                 soup = BeautifulSoup(data['content'], 'html.parser')
                 token_string = soup.get_text()
                 tokens = tokenize(token_string)
+                tokens = [ps.stem(token) for token in tokens]
                 freq_list = computeWordFrequencies(tokens)
                 _add_posting(freq_list,id)
 
