@@ -10,7 +10,10 @@
 import os
 import json
 import re
+import sys
+import string
 from bs4 import BeautifulSoup
+from PartA import computeWordFrequencies
 
 # ---------- Global Variables ---------- #
 
@@ -47,10 +50,10 @@ def _assign_doc_id(document):
 def _add_posting(token, id):
     ''' Adds/updates a posting, of the token's occurence in a document (id), in the inverted index '''
     global inverted_index
-    token2 = token.lower()
+    token2 = token.lower()                                  # O(w)
     posting_updated = False
     try:
-        for posting in inverted_index[token2]:
+        for posting in inverted_index[token2]:              # O(b)
             if posting.id == id:
                 posting.score += 1
                 posting_updated = True
@@ -61,6 +64,15 @@ def _add_posting(token, id):
         inverted_index[token2] = []
         inverted_index[token2].append(Posting(id, 1))
 
+def _add_posting(freq_list, id):
+    global inverted_index
+    for key, value in freq_list.items():
+        if key not in inverted_index:
+            inverted_index[key] = []
+            inverted_index[key].append(Posting(id,value))
+        else:
+            inverted_index[key].append(Posting(id,value))
+    
 def access_json_files(root):
     ''' Access each domain folder and their respected json files. '''
     # directory concept: https://realpython.com/working-with-files-in-python/#listing-all-files-in-a-directory
@@ -70,13 +82,13 @@ def access_json_files(root):
     corpus = os.listdir(root)    # list containing each domain in 'DEV'
     
     # --- Check each domain (folder) --- #
-    for domain in corpus[:1]:
+    for domain in corpus:
         if os.path.isdir(os.path.join(root, domain)):  # Only get folders. Ignores .DS_Store in mac
             print('----------{}----------'.format(domain))  # just for showing which urls belong to what
             
             sub_dir = '{}/{}'.format(root,domain)           # Path to domain within root
             pages = os.listdir(sub_dir)                     # list json files, or 'pages', in domain
-            for page in pages[:3]:
+            for page in pages:
                 id = _assign_doc_id(page)                         # give json file a unique doc_id
                 json_file_location = sub_dir + '/{}'.format(page) # Path to page
 
@@ -86,11 +98,23 @@ def access_json_files(root):
 
                 # --- Do Stuff with the data --- #
                 soup = BeautifulSoup(data['content'], 'html.parser')
-                tokens = re.findall('[a-zA-Z0-9]+',soup.get_text())
-                for token in tokens:
-                    _add_posting(token, id)
+                token_string = soup.get_text()
+                tokens = tokenize(token_string)
+                freq_list = computeWordFrequencies(tokens)
+                _add_posting(freq_list,id)
 
 # ------------------------------------------ #
+# --------------- tokenizing-----------------#
+
+def tokenize(token_string) -> list:
+    more_restrictful_alphanum = re.compile(r'^[0-9A-Za-z]*$')               # alphanum() allows non-english characters
+    tokens = []
+    token_string = token_string.translate(str.maketrans(string.punctuation,' ' * len(string.punctuation)))   # treat all punctuation's as spaces.
+    token_string = token_string.split()                                               # convert our string into a list of tokens.
+    for token in token_string:                                                   # iterate through our raw tokens
+        if len(token) >= 2 and more_restrictful_alphanum.match(token):      # only add the "token" to our tokens list if
+            tokens.append(token.lower())                                    # it satisfies our constraint
+    return tokens      
 
 # For now, just prints the the tokens and postings in the first domain for 3 documents (indices above)
 
@@ -101,4 +125,5 @@ if __name__ == '__main__':
         if len(postings) > 1:
             print('{} : {}'.format(word, postings))
     print('Number of documents: {}'.format(doc_id_counter-1))
-    
+    print('Unique Keys: {}'.format(len(list(inverted_index.keys()))))
+    print('Size of index: {} kilobytes'.format(sys.getsizeof(inverted_index)/ 1000))
