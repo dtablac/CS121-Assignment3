@@ -86,18 +86,18 @@ def access_json_files(root):
             pages = os.listdir(sub_dir)                     # list json files, or 'pages', in domain
             for page in pages:
                 id = _assign_doc_id(page)                         # give json file a unique doc_id
-                #json_file_location = sub_dir + '/{}'.format(page) # Path to page
+                json_file_location = sub_dir + '/{}'.format(page) # Path to page
 
-                #file = open(json_file_location, 'r')              # open JSON file
-                #data = json.load(file)                            # JSON object becomes dict
-                #file.close()
+                file = open(json_file_location, 'r')              # open JSON file
+                data = json.load(file)                            # JSON object becomes dict
+                file.close()
 
                 # --- Do Stuff with the data --- #
-                #soup = BeautifulSoup(data['content'], 'html.parser')
-                #token_string = soup.get_text()
-                #tokens = tokenize(token_string)
-                #freq_list = computeWordFrequencies(tokens)
-                #_add_posting(freq_list,id)
+                soup = BeautifulSoup(data['content'], 'html.parser')
+                token_string = soup.get_text()
+                tokens = tokenize(token_string)
+                freq_list = computeWordFrequencies(tokens)
+                _add_posting(freq_list,id)
 
 # ------------------------------------------ #
 # --------------- tokenizing-----------------#
