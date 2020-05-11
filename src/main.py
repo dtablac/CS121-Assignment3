@@ -87,14 +87,15 @@ def access_json_files(root):
             sub_dir = '{}/{}'.format(root,domain)           # Path to domain within root
             pages = os.listdir(sub_dir)                     # list json files, or 'pages', in domain
             for page in pages:
-                id = _assign_doc_id(page)                         # give json file a unique doc_id
-                json_file_location = sub_dir + '/{}'.format(page) # Path to page
+                #id = _assign_doc_id(page)                          # give json file a unique doc_id
+                json_file_location = sub_dir + '/{}'.format(page)   # Path to page
 
-                file = open(json_file_location, 'r')              # open JSON file
-                data = json.load(file)                            # JSON object becomes dict
+                file = open(json_file_location, 'r')                # open JSON file
+                data = json.load(file)                              # JSON object becomes dict
                 file.close()
 
                 # --- Do Stuff with the data --- #
+                id = _assign_doc_id(data['url'])                    # give a unique doc_id to our url
                 soup = BeautifulSoup(data['content'], 'html.parser')
                 token_string = soup.get_text()
                 tokens = tokenize(token_string)
@@ -123,9 +124,24 @@ if __name__ == '__main__':
         json.dump(doc_ids, output1)
     print('Done.')
 
-    print('Writing index to txt...')
+    '''print('Writing index to txt...')
     with open('index.txt','w') as output2:
         json.dump(inverted_index, output2)
+    print('Done.') '''
+
+    line_counter = 1
+    index_locator = {}
+    print('writing index postings to index_posting.txt')
+    with open('index_postings.txt', 'w') as output2:
+        for key, value in inverted_index.items():
+            output2.write(str(value) + '\n')
+            index_locator[key] = line_counter
+            line_counter += 1
+
+    print('Done.')
+    print('writing index posting location to index_posting_location.txt')
+    with open('index_posting_location.txt', 'w') as output3:
+        json.dump(index_locator,output3)
     print('Done.')
 
     print('Number of documents: {}'.format(doc_id_counter-1))
