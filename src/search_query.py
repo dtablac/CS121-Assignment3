@@ -2,6 +2,7 @@ import ast
 import json
 import time
 import threading
+from nltk.stem import PorterStemmer
 
 def get_postings(token):
     ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
@@ -48,7 +49,6 @@ def show_urls():
             for posting in postings[1:]:
                 intersected = set(intersected).intersection(posting)
         result_list = list(intersected)[:5]
-
         # --- Print urls --- #
         if len(result_list) == 0:
             print('No search results were found.')
@@ -66,13 +66,15 @@ if __name__ == '__main__':
     ip_loc = json.load(f)        # load the index of tokens mapped to the file's line; so we dont load the entire index into memory
     values = {}
     f.close()
-
+    ps = PorterStemmer()
     doc_ids_file = open('doc-ids.txt','r')
     doc_ids = json.load(doc_ids_file)
 
     while True:
         search_query = input("Search for: ").lower()
         search_query = search_query.split()
+        search_query = [ps.stem(item) for item in search_query]
+        print(search_query)
         values.clear()
         start = time.time()
 
