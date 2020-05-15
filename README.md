@@ -2,7 +2,8 @@
 
 ## Basic Flask app for ICS directory search engine
 
-<b>run</b>: 'python3  src/search_query.py'
+Navigate to the src folder and run:
+<b>'python3  src/search_query.py'</b>
 
 
 ** developer.zip is too big to add here, but is on the assignment page in canvas. Just add to main directory.
