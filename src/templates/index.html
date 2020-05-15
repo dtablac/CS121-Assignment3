@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset="UTF-8"/>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}" type="text/css"/>
+        <title>ICSearch</title>
+    </head>
+    
+    <body>
+        <div class="container">
+            <h1>ICSearch!</h1>
+            <form method="POST">
+                <input type="text" name="search"/>
+                <br>
+                <button class="btn">Search</button>
+            </form>
+            <br>
+            <h2>{{query}}</h2>
+            <br>
+            {% include 'results.html' %}
+            <p>{{time}}</p>
+        </div>
+    </body>
+</html>

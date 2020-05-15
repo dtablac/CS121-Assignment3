@@ -1,0 +1,59 @@
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+.container {
+    position: absolute;
+    border: 1px solid black;
+    top: 50%;
+    left: 50%;
+    min-width: 50%;
+    min-height: 70%;
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 5px 8px 20px black;
+
+    opacity: 99%;
+}
+.results {
+    position: relative;
+    text-align: left;
+    margin-bottom: 20px;
+    border: black 1px solid;
+    padding: 10px;
+    min-width: 50%;
+    text-align: center;
+}
+.btn {
+    font-size: 20px;
+    min-width: 30%;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    border-radius: 5px;
+    padding: 10px;
+}
+.btn:hover {
+    transition: 0.3s;
+    color: white;
+    background-color: black;
+    cursor: pointer;
+}
+body {
+    background: url('light-pipes.jpg');
+    background-size: 100%;
+    background-repeat: no-repeat;
+}
+input {
+    margin: 10px;
+    min-width: 50%;
+    font-size: 20px;
+}
+li {
+    position: relative;
+    margin: 10px;    
+}
