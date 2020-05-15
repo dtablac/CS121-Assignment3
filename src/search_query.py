@@ -7,15 +7,16 @@ from nltk.stem import PorterStemmer
 def get_postings(token):
     ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
     ''' we open a new fp everytime because seek(0,0) may not be thread friendly '''
-
+  
     d = open('index_postings.txt','r') 
     try:
-        for i, line in enumerate(d):                            
-            if i == ip_loc[token]:
-                values[token] = ast.literal_eval(line)
-                return 
+        for k_index in range(ip_loc[token]):
+            line = d.readline()
+        k = ast.literal_eval(line)
+        values[token] = k
     except:
         pass
+    d.close()
 
 def create_threads(query_list):
     ''' Creates threads for each individual token in the query '''
@@ -69,8 +70,6 @@ if __name__ == '__main__':
     ps = PorterStemmer()
     doc_ids_file = open('doc-ids.txt','r')
     doc_ids = json.load(doc_ids_file)
-    f = open("index.txt",'rb')
-    test_equal = json.load(f)
 
     while True:
         search_query = input("Search for: ").lower()
@@ -79,18 +78,11 @@ if __name__ == '__main__':
         values.clear()
         start = time.time()
 
-        '''threads = create_threads(search_query)
+        threads = create_threads(search_query)
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
-        '''
-
-        for query in search_query:
-            if test_equal[query] is not None:
-                values[query] = test_equal[query]
-            else:
-                pass
             
         runtime = (time.time() - start) * 1000
         show_urls()
