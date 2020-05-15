@@ -53,6 +53,10 @@ input {
     min-width: 75%;
     font-size: 20px;
     text-align: center;
+    border-radius: 5px;
+}
+input:hover {
+    border-color: #a0a0a0 #b9b9b9 #b9b9b9 #b9b9b9;
 }
 li {
     position: relative;
