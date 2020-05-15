@@ -41,7 +41,7 @@ def show_urls():
     for token in values:
         L = sorted(values[token], key=lambda item: item[1], reverse=True) # Sort postings by term frequency
         postings.append(_list_doc_ids(L))
-
+        
     try:
         # --- AND documents that query tokens appear in --- #
         intersected = postings[0]
@@ -69,21 +69,29 @@ if __name__ == '__main__':
     ps = PorterStemmer()
     doc_ids_file = open('doc-ids.txt','r')
     doc_ids = json.load(doc_ids_file)
+    f = open("index.txt",'rb')
+    test_equal = json.load(f)
 
     while True:
         search_query = input("Search for: ").lower()
         search_query = search_query.split()
         search_query = [ps.stem(item) for item in search_query]
-        print(search_query)
         values.clear()
         start = time.time()
 
-        threads = create_threads(search_query)
+        '''threads = create_threads(search_query)
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
+        '''
 
+        for query in search_query:
+            if test_equal[query] is not None:
+                values[query] = test_equal[query]
+            else:
+                pass
+            
         runtime = (time.time() - start) * 1000
         show_urls()
         print('Retrieved in {} ms.'.format(runtime))
