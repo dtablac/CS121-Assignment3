@@ -54,6 +54,10 @@ input {
     font-size: 20px;
     text-align: center;
     border-radius: 5px;
+    
+    background-image: url('mag-glass.png');
+    background-size: 25px;
+    background-repeat: no-repeat;
 }
 input:hover {
     border-color: #a0a0a0 #b9b9b9 #b9b9b9 #b9b9b9;
