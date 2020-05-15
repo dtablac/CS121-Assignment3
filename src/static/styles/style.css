@@ -45,15 +45,19 @@
 }
 body {
     background: url('light-pipes.jpg');
-    background-size: 100%;
+    background-size: cover;
     background-repeat: no-repeat;
 }
 input {
     margin: 10px;
-    min-width: 50%;
+    min-width: 75%;
     font-size: 20px;
+    text-align: center;
 }
 li {
     position: relative;
     margin: 10px;    
+}
+li:hover {
+    font-weight: bold;
 }
