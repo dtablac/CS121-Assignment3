@@ -66,11 +66,19 @@ def _add_posting(freq_list, id):
     global inverted_index
     for key, value in freq_list.items():
         if key not in inverted_index:
-            inverted_index[key] = []
-            inverted_index[key].append([id,value])
+            inverted_index[key] = {}
+            inverted_index[key][id] = value
         else:
-            inverted_index[key].append([id,value])
-    
+            inverted_index[key][id] = value
+
+def _offload_index(offload_counter):
+    with open("partials/partial_index" + str(offload_counter) + ".txt", 'w') as output:
+        ''' json.dump(inverted_index,output) '''
+        sorted_inverted_index = sorted(inverted_index.items(), key= lambda kv: kv[0])
+        for item in sorted_inverted_index:
+            output.write(str(item) + '\n')
+        inverted_index.clear()
+
 def access_json_files(root):
     ''' Access each domain folder and their respected json files. '''
     # directory concept: https://realpython.com/working-with-files-in-python/#listing-all-files-in-a-directory
@@ -80,13 +88,16 @@ def access_json_files(root):
     corpus = os.listdir(root)    # list containing each domain in 'DEV'
     
     # --- Check each domain (folder) --- #
-    for domain in corpus:
+    counter = 0
+    offload_counter = 1
+
+    for domain in corpus[:20]:
         if os.path.isdir(os.path.join(root, domain)):  # Only get folders. Ignores .DS_Store in mac
             print('----------{}----------'.format(domain))  # just for showing which urls belong to what
-            
             sub_dir = '{}/{}'.format(root,domain)           # Path to domain within root
             pages = os.listdir(sub_dir)                     # list json files, or 'pages', in domain
             for page in pages:
+                counter += 1
                 #id = _assign_doc_id(page)                          # give json file a unique doc_id
                 json_file_location = sub_dir + '/{}'.format(page)   # Path to page
 
@@ -102,6 +113,15 @@ def access_json_files(root):
                 tokens = [ps.stem(token) for token in tokens]
                 freq_list = computeWordFrequencies(tokens)
                 _add_posting(freq_list,id)
+                if counter % 1000 == 0:
+                    print("encountered 1000 pages")
+                if counter >= 1000:
+                    counter = 0
+                    ''' off load here '''
+                    print("offloading index into partial index")
+                    _offload_index(offload_counter)
+                    offload_counter += 1
+
 
 # ------------------------------------------ #
 # --------------- tokenizing-----------------#
