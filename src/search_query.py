@@ -22,7 +22,9 @@ def create_threads(query_list):
     ''' Creates threads for each individual token in the query '''
     threads = []
     for query in query_list:
-        threads.append(threading.Thread(target=get_postings,args=(query,)))
+        thread = threading.Thread(target=get_postings,args=(query,))
+        threads.append(thread)
+        thread.start()
     return threads
 
 def _list_doc_ids(postings: list):
@@ -78,11 +80,11 @@ if __name__ == '__main__':
         values.clear()
         start = time.time()
 
-        threads = create_threads(search_query)
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        for word in search_query:
+            get_postings(word)
+        #threads = create_threads(search_query)
+        #for thread in threads:
+        #    thread.join()
             
         runtime = (time.time() - start) * 1000
         show_urls()
