@@ -107,17 +107,22 @@ def run_search():
 
     start = time.time()
 
-    # --- Threads fill 'values' dict with urls --- #
-    threads = create_threads(search_query)
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
+    for word in search_query:
+        get_postings(word)
+
+    # # --- Threads fill 'values' dict with urls --- #
+    # threads = create_threads(search_query)
+    # for thread in threads:
+    #     thread.start()
+    # for thread in threads:
+    #     thread.join()
+
+    runtime = (time.time() - start) * 1000
 
     # --- Update 'results.html' template with urls found --- #
     _render_response(show_urls())
 
-    runtime = (time.time() - start) * 1000
+    # runtime = (time.time() - start) * 1000
 
     timestamp = 'Retrieved in {} ms.'.format(runtime)
 
@@ -136,7 +141,7 @@ if __name__ == '__main__':
 
     ps = PorterStemmer()    # Stems tokens in user query
 
-    doc_ids_file = open('doc-ids.txt','r')    # Load
+    doc_ids_file = open('doc-ids.txt','r')    # Load doc-ids for URL ref
     doc_ids = json.load(doc_ids_file)
     doc_ids_file.close()
 
