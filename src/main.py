@@ -11,6 +11,7 @@ import string
 from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
 from PartA import computeWordFrequencies
+from partial_indexer import merge_indexes
 
 # ---------- Global Variables ---------- #
 
@@ -79,6 +80,8 @@ def _offload_index(offload_counter):
             output.write(str(item) + '\n')
         inverted_index.clear()
 
+
+
 def access_json_files(root):
     ''' Access each domain folder and their respected json files. '''
     # directory concept: https://realpython.com/working-with-files-in-python/#listing-all-files-in-a-directory
@@ -91,7 +94,7 @@ def access_json_files(root):
     counter = 0
     offload_counter = 1
 
-    for domain in corpus[:20]:
+    for domain in corpus:
         if os.path.isdir(os.path.join(root, domain)):  # Only get folders. Ignores .DS_Store in mac
             print('----------{}----------'.format(domain))  # just for showing which urls belong to what
             sub_dir = '{}/{}'.format(root,domain)           # Path to domain within root
@@ -115,7 +118,7 @@ def access_json_files(root):
                 _add_posting(freq_list,id)
                 if counter % 1000 == 0:
                     print("encountered 1000 pages")
-                if counter >= 1000:
+                if counter >= 15000:
                     counter = 0
                     ''' off load here '''
                     print("offloading index into partial index")
@@ -144,25 +147,27 @@ if __name__ == '__main__':
         json.dump(doc_ids, output1)
     print('Done.')
 
-    '''print('Writing index to txt...')
-    with open('index.txt','w') as output2:
-        json.dump(inverted_index, output2)
-    print('Done.') '''
+    piOne = open('partials/partial_index1.txt', 'r')
+    piTwo = open('partials/partial_index2.txt', 'r')
+    piThree = open('partials/partial_index3.txt', 'r')
 
-    line_counter = 1
-    index_locator = {}
-    print('writing index postings to index_posting.txt')
-    with open('index_postings.txt', 'w') as output2:
-        for key, value in inverted_index.items():
-            output2.write(str(value) + '\n')
-            index_locator[key] = line_counter
-            line_counter += 1
+    merge_indexes(1,piOne,piTwo)
+    pmi = open('merge1.txt','r')
+    merge_indexes(2,pmi,piThree)
 
-    print('Done.')
-    print('writing index posting location to index_posting_location.txt')
-    with open('index_posting_location.txt', 'w') as output3:
-        json.dump(index_locator,output3)
-    print('Done.')
+    ''' offload the rest of the index '''
+    if len(inverted_index) != 0:
+        _offload_index(4)
+        piFour = open('partials/partial_index4.txt','r')
+        pmi2 = open('merge2.txt','r')
+        merge_indexes(3,pmi2,piFour)
+
+    piOne.close()
+    piTwo.close()
+    piThree.close()
+    piFour.close()
+    pmi.close()
+    pmi2.close()
 
     print('Number of documents: {}'.format(doc_id_counter-1))
     print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))
