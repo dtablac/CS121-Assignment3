@@ -11,11 +11,21 @@ def get_postings(token):
     ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
     ''' we open a new fp everytime because seek(0,0) may not be thread friendly '''
     with open('merges/merge3.txt','r') as index:
-        fp = index_of_index[token]
-        index.seek(fp)
-        line = ast.literal_eval(index.readline())
-        if token == line[0]:
-            values[token] = sorted(list(line[1].items()), reverse=True, key=lambda item: item[1])
+        try:
+            fp = index_of_index[token]
+            index.seek(fp)
+            line = ast.literal_eval(index.readline())
+            if token == line[0]:
+                values[token] = sorted(list(line[1].items()), reverse=True, key=lambda item: item[1])
+        except KeyError: # index_of_index key error
+            return []
+
+def create_threads(query_list):
+    ''' Creates threads for each individual token in the query '''
+    threads = []
+    for query in query_list:
+        threads.append(threading.Thread(target=get_postings, args=(query,)))
+    return threads
 
 def _list_doc_ids(postings: list):
     ''' Get doc_ids [x,x2,...] from posting list [[x,y],[x2,y2],...] '''
@@ -101,24 +111,26 @@ def run_search():
     search_query = [ps.stem(item) for item in search_query]
     values.clear()
 
-    start = time.time()
 
-    for word in search_query:
-        get_postings(word)
-
-    # # --- Threads fill 'values' dict with urls --- #
     # threads = create_threads(search_query)
+    # start = time.time()
     # for thread in threads:
     #     thread.start()
     # for thread in threads:
     #     thread.join()
 
-    runtime = (time.time() - start) * 1000
+    start = 0
+
+    for word in search_query:
+        start_temp_time = time.time()
+        get_postings(word)
+        end_temp_time = time.time()
+        start += (end_temp_time - start_temp_time)
+
+    runtime = start * 1000
 
     # --- Update 'results.html' template with urls found --- #
     _render_response(show_urls())
-
-    # runtime = (time.time() - start) * 1000
 
     timestamp = 'Retrieved in {} ms.'.format(runtime)
 
@@ -130,12 +142,12 @@ def run_search():
 if __name__ == '__main__':
     # --- Load index of tokens mapped to the file's line. --- # 
     #     This prevents loading entire index to memory.       #
-    f = open('index_posting_location.txt','r')                        
-    ip_loc = json.load(f)
     values = {}
-    f.close()
 
     ps = PorterStemmer()    # Stems tokens in user query
+
+    with open('index_for_index.txt','r') as index_index:
+        index_of_index = json.load(index_index) 
 
     doc_ids_file = open('doc-ids.txt','r')    # Load doc-ids for URL ref
     doc_ids = json.load(doc_ids_file)

@@ -21,7 +21,7 @@ def create_index_for_index()->dict:
                 line = ast.literal_eval(index.readline())  # reads line then advances fp
                 token = line[0]
                 print(token)
-                index_of_index[token] = current_fp
+                index_of_index[token] = current_fp    # map token to fp
             except SyntaxError:    # EOF
                 print('Done.')
                 print("Index for index in 'index_for_index.txt'")
