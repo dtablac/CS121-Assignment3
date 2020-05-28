@@ -1,9 +1,7 @@
 doc-ids.txt
 DEV/
 partials
-merge1.txt
-merge2.txt
-merge3.txt
+merges
 __pycache__/
 index_for_index.txt
 .DS_Store
