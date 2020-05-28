@@ -7,25 +7,12 @@ from nltk.stem import PorterStemmer
 def get_postings(token):
     ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
     ''' we open a new fp everytime because seek(0,0) may not be thread friendly '''
-  
-    d = open('index_postings.txt','r') 
-    try:
-        for k_index in range(ip_loc[token]):
-            line = d.readline()
-        k = ast.literal_eval(line)
-        values[token] = k
-    except:
-        pass
-    d.close()
-
-def create_threads(query_list):
-    ''' Creates threads for each individual token in the query '''
-    threads = []
-    for query in query_list:
-        thread = threading.Thread(target=get_postings,args=(query,))
-        threads.append(thread)
-        thread.start()
-    return threads
+    with open('merges/merge3.txt','r') as index:
+        fp = index_of_index[token]
+        index.seek(fp)
+        line = ast.literal_eval(index.readline())
+        if token == line[0]:
+            values[token] = sorted(list(line[1].items()), reverse=True, key=lambda item: item[1])
 
 def _list_doc_ids(postings: list):
     ''' Get doc_ids [x,x2,...] from posting list [[x,y],[x2,y2],...] '''
@@ -42,8 +29,7 @@ def show_urls():
     postings = []
     # --- Get all posting lists for each token. Store in postings list --- #
     for token in values:
-        L = sorted(values[token], key=lambda item: item[1], reverse=True) # Sort postings by term frequency
-        postings.append(_list_doc_ids(L))
+        postings.append(_list_doc_ids(values[token]))
         
     try:
         # --- AND documents that query tokens appear in --- #
@@ -52,6 +38,7 @@ def show_urls():
             for posting in postings[1:]:
                 intersected = set(intersected).intersection(posting)
         result_list = list(intersected)[:5]
+
         # --- Print urls --- #
         if len(result_list) == 0:
             print('No search results were found.')
@@ -65,13 +52,16 @@ def show_urls():
 
 
 if __name__ == '__main__':
-    f = open('index_posting_location.txt','r')                        
-    ip_loc = json.load(f)        # load the index of tokens mapped to the file's line; so we dont load the entire index into memory
     values = {}
-    f.close()
+    
     ps = PorterStemmer()
     doc_ids_file = open('doc-ids.txt','r')
     doc_ids = json.load(doc_ids_file)
+
+    # index of index
+
+    with open('index_for_index.txt','r') as index_index:
+        index_of_index = json.load(index_index)
 
     while True:
         search_query = input("Search for: ").lower()
@@ -82,12 +72,9 @@ if __name__ == '__main__':
 
         for word in search_query:
             get_postings(word)
-        #threads = create_threads(search_query)
-        #for thread in threads:
-        #    thread.join()
             
+        results = show_urls()
         runtime = (time.time() - start) * 1000
-        show_urls()
         print('Retrieved in {} ms.'.format(runtime))
 
         # values will hold our data

@@ -1,9 +1,9 @@
 doc-ids.txt
-index_posting_location.txt
-index_postings.txt
 DEV/
 partials
 merge1.txt
 merge2.txt
 merge3.txt
 __pycache__/
+index_for_index.txt
+.DS_Store

@@ -152,14 +152,14 @@ if __name__ == '__main__':
     piThree = open('partials/partial_index3.txt', 'r')
 
     merge_indexes(1,piOne,piTwo)
-    pmi = open('merge1.txt','r')
+    pmi = open('merges/merge1.txt','r')
     merge_indexes(2,pmi,piThree)
 
     ''' offload the rest of the index '''
     if len(inverted_index) != 0:
         _offload_index(4)
         piFour = open('partials/partial_index4.txt','r')
-        pmi2 = open('merge2.txt','r')
+        pmi2 = open('merges/merge2.txt','r')
         merge_indexes(3,pmi2,piFour)
 
     piOne.close()
@@ -168,6 +168,7 @@ if __name__ == '__main__':
     piFour.close()
     pmi.close()
     pmi2.close()
+    
 
     print('Number of documents: {}'.format(doc_id_counter-1))
     print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))

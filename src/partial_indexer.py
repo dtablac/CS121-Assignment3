@@ -3,7 +3,7 @@ import ast
 merge_index = {}
 
 def merge_indexes(counter, f1, f2):
-    m = open('merge' + str(counter) + '.txt', 'w')
+    m = open('merges/merge' + str(counter) + '.txt', 'w')
     while True:
         try:
             k = ast.literal_eval(f1.readline())
