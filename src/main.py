@@ -117,7 +117,7 @@ def access_json_files(root):
                 freq_list = computeWordFrequencies(tokens)
                 _add_posting(freq_list,id)
                 if counter % 1000 == 0:
-                    print("encountered 1000 pages")
+                    print("encountered {} pages".format(counter))
                 if counter >= 15000:
                     counter = 0
                     ''' off load here '''
