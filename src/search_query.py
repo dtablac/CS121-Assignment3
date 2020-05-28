@@ -10,23 +10,20 @@ app = Flask(__name__)
 def get_postings(token):
     ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
     ''' we open a new fp everytime because seek(0,0) may not be thread friendly '''
-  
-    d = open('index_postings.txt','r') 
-    try:
-        for k_index in range(ip_loc[token]):
-            line = d.readline()
-        k = ast.literal_eval(line)
-        values[token] = k
-    except:
-        pass
-    d.close()
+    with open('merges/merge3.txt','r') as index:
+        fp = index_of_index[token]
+        index.seek(fp)
+        line = ast.literal_eval(index.readline())
+        if token == line[0]:
+            values[token] = sorted(list(line[1].items()), reverse=True, key=lambda item: item[1])
 
-def create_threads(query_list):
-    ''' Creates threads for each individual token in the query '''
-    threads = []
-    for query in query_list:
-        threads.append(threading.Thread(target=get_postings,args=(query,)))
-    return threads
+def _list_doc_ids(postings: list):
+    ''' Get doc_ids [x,x2,...] from posting list [[x,y],[x2,y2],...] '''
+    doc_ids = []
+    for posting in postings:
+        doc_ids.append(posting[0])
+    return doc_ids
+
 
 def show_urls():
     ''' Prints the top 5 urls from the search (AND only) '''
@@ -35,8 +32,7 @@ def show_urls():
     postings = []
     # --- Get all posting lists for each token. Store in postings list --- #
     for token in values:
-        L = sorted(values[token], key=lambda item: item[1], reverse=True) # Sort postings by term frequency
-        postings.append(_list_doc_ids(L))
+        postings.append(_list_doc_ids(values[token]))
         
     try:
         # --- AND documents that query tokens appear in --- #
