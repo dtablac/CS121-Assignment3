@@ -2,7 +2,10 @@ import ast
 import json
 import time
 import threading
+import re
+import string
 from nltk.stem import PorterStemmer
+from cosine_similarity import *
 from flask import Flask, request, render_template
 
 app = Flask(__name__)
@@ -16,18 +19,16 @@ def get_postings(token):
             if token == line[0]:
                 values[token] = list(line[1].items())
                 tf_idf[token] = line[1]    # dict of tokens as keys, dicts as values (doc_id: tf-idf)
-                #print(tf_idf)
         except KeyError: # index_of_index key error
             return []
 
 def create_big_dict(tokens, doc_ids):
+    if doc_ids == None:
+        return None
     big_dict = {}
-    print(doc_ids)
     for token in tokens:
         big_dict[token] = {}
-        tf_idf[token] = {}
         for doc_id in doc_ids:
-            #print(tf_idf)
             big_dict[token][doc_id] = tf_idf[token][doc_id]
     return big_dict
         
@@ -36,19 +37,20 @@ def intersect_doc_ids():
     posting_lengths = {}
     for key in values.keys():
         posting_lengths[key] = len(values[key])
-    posting_lengths = sorted(list(posting_lengths.items()), key=lambda item: item[1])
+    posting_lengths = sorted(list(posting_lengths.items()), key=lambda item: item[1])       # sort the posting lengths by smallest to greatest.
 
-    token = posting_lengths[0][0]
-    print(token)
-    intersected = [item[0] for item in values[ token ]]
-    if (len(posting_lengths) > 1):
-       for posting in posting_lengths[1:]:
-           temp_list = []
-           token = posting[0]
-           print(token)
-           temp_list = [item[0] for item in values[token]]
-           intersected = set(intersected).intersection( temp_list )
-    return intersected
+    if len(posting_lengths) > 0:
+        token = posting_lengths[0][0]                                  # get the first token in our posting length since format is of [(t1, l1),(t2, l2),(t3, l3)]
+        intersected = [item[0] for item in values[ token ]]             # value[token] = (docid, tf-idf); so we want to get item[0] cause we want doc id.
+        if (len(posting_lengths) > 1):                                  # if there are more tokens in posting length then...
+            for posting in posting_lengths[1:]:                          # do every token except the first one
+                temp_list = []                                           # create a temp list.                       
+                token = posting[0]                                       # store the new token to be found
+                temp_list = [item[0] for item in values[token]]          # our temp list will have their doc_ids
+                intersected = list(set(temp_list) & set(intersected))
+        return intersected
+    else:
+        return None
 
 
 def create_threads(query_list):
@@ -66,34 +68,18 @@ def _list_doc_ids(postings: list):
     return doc_ids
 
 
-def show_urls():
+def show_urls(scores: dict):
     ''' Prints the top 5 urls from the search (AND only) '''
     global values, doc_ids
-
-    postings = []
-    # --- Get all posting lists for each token. Store in postings list --- #
-    for token in values:
-        postings.append(_list_doc_ids(values[token]))
-        
-    try:
-        # --- AND documents that query tokens appear in --- #
-        intersected = postings[0]
-        if (len(postings) > 1):
-            for posting in postings[1:]:
-                intersected = set(intersected).intersection(posting)
-        result_list = list(intersected)[:5]
-        # --- Print urls --- #
-        if len(result_list) == 0:
-            return None
-        else:
-            result = []
-            for item in result_list:
-                result.append(doc_ids[str(item)])
-            return result
-
-    except IndexError:
-        # --- If no URLs from retrieval and/or intersection --- #
+    if scores == None or len(scores) == 0:
         return None
+    big_list = sorted(list(scores.items()), key=lambda item: item[1])
+    results = []
+    for items in big_list:
+        url = doc_ids[str(items[0])]
+        if '#' not in url:
+            results.append(doc_ids[str(items[0])])
+    return results[:5]
 
 ### -------------------------- Helper Functions -------------------------- ###
 
@@ -138,41 +124,42 @@ def run_search():
 
     # --- Do stuff with search query --- #
     search_query = user_query.lower()
+    search_query = search_query.translate(str.maketrans(string.punctuation,' ' * len(string.punctuation)))
     search_query = search_query.split()
     search_query = [ps.stem(item) for item in search_query]
-
-    # query_scores = calculate_query_scores(search_query)
-
-    values.clear()
-    tf_idf.clear()
-
-
-    # threads = create_threads(search_query)
-    # start = time.time()
-    # for thread in threads:
-    #     thread.start()
-    # for thread in threads:
-    #     thread.join()
-
+    start_temp_time = time.time()
     start = 0
+    if len(search_query) == 0:
+        _render_response(None)
+    else: 
+        query_scores = calculate_query_scores(search_query)
+        values.clear()
+        tf_idf.clear()
 
-    for word in search_query:
-        start_temp_time = time.time()
+        # threads = create_threads(search_query)
+        # start = time.time()
+        # for thread in threads:
+        #     thread.start()
+        # for thread in threads:
+        #     thread.join()
 
-        get_postings(word)
 
-        #cosine_similarity(query_scores, values)
+        for word in search_query:
 
-        end_temp_time = time.time()
-        start += (end_temp_time - start_temp_time)
+            get_postings(word)
 
-    print(create_big_dict(search_query, intersect_doc_ids()))
 
+            #cosine_similarity(query_scores, values)
+
+
+        big_dict = create_big_dict(search_query, intersect_doc_ids())
+        scores = get_cosine_similarity_list(query_scores,big_dict)
+
+        # --- Update 'results.html' template with urls found --- #
+        _render_response(show_urls(scores))
+    end_temp_time = time.time()
+    start += (end_temp_time - start_temp_time)
     runtime = start * 1000
-
-    # --- Update 'results.html' template with urls found --- #
-    _render_response(show_urls())
-
     timestamp = 'Retrieved in {} ms.'.format(runtime)
 
     # --- Render results (check index.html), query, and time --- #

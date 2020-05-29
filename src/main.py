@@ -14,6 +14,7 @@ from PartA import computeWordFrequencies
 from partial_indexer import merge_indexes
 from ranking import compute_tf_idf
 from normalize import normalize
+from index_for_index import create_index_for_index
 
 # ---------- Global Variables ---------- #
 
@@ -174,7 +175,7 @@ if __name__ == '__main__':
     N = doc_id_counter - 1
     #unique_tokens = 
 
-    print('Number of documents: {}'.format(N)
+    print('Number of documents: {}'.format(N))
 
     #print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))
 

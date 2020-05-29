@@ -19,12 +19,16 @@ def get_tf_idf_list(token):
 
 def calculate_denominator(tf_idf_list):
     sum = 0
+    print(tf_idf_list)
     for score in tf_idf_list:
         sum += score ** 2
     return math.sqrt(sum)
 
 def calculate_normalized(tf_idf, denominator):
-    result = tf_idf / denominator
+    try:
+        result = tf_idf / denominator
+    except ZeroDivisionError:
+        result = 1
     return result
 
 def normalize():

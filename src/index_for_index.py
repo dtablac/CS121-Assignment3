@@ -20,7 +20,7 @@ def create_index_for_index()->dict:
                 current_fp = index.tell()    # current file position 
                 line = ast.literal_eval(index.readline())  # reads line then advances fp
                 token = line[0]
-                print(token)
+                #print(token)
                 index_of_index[token] = current_fp    # map token to fp
             except SyntaxError:    # EOF
                 print('Done.')
