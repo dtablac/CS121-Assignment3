@@ -8,17 +8,48 @@ from flask import Flask, request, render_template
 app = Flask(__name__)
 
 def get_postings(token):
-    ''' takes a token, and will try to find that token's inverted index postings in the index_postings file '''
-    ''' we open a new fp everytime because seek(0,0) may not be thread friendly '''
-    with open('merges/merge3.txt','r') as index:
+    with open('final_index_2.txt','r') as index:
         try:
             fp = index_of_index[token]
             index.seek(fp)
             line = ast.literal_eval(index.readline())
             if token == line[0]:
-                values[token] = sorted(list(line[1].items()), reverse=True, key=lambda item: item[1])
+                values[token] = list(line[1].items())
+                tf_idf[token] = line[1]    # dict of tokens as keys, dicts as values (doc_id: tf-idf)
+                #print(tf_idf)
         except KeyError: # index_of_index key error
             return []
+
+def create_big_dict(tokens, doc_ids):
+    big_dict = {}
+    print(doc_ids)
+    for token in tokens:
+        big_dict[token] = {}
+        tf_idf[token] = {}
+        for doc_id in doc_ids:
+            #print(tf_idf)
+            big_dict[token][doc_id] = tf_idf[token][doc_id]
+    return big_dict
+        
+
+def intersect_doc_ids():
+    posting_lengths = {}
+    for key in values.keys():
+        posting_lengths[key] = len(values[key])
+    posting_lengths = sorted(list(posting_lengths.items()), key=lambda item: item[1])
+
+    token = posting_lengths[0][0]
+    print(token)
+    intersected = [item[0] for item in values[ token ]]
+    if (len(posting_lengths) > 1):
+       for posting in posting_lengths[1:]:
+           temp_list = []
+           token = posting[0]
+           print(token)
+           temp_list = [item[0] for item in values[token]]
+           intersected = set(intersected).intersection( temp_list )
+    return intersected
+
 
 def create_threads(query_list):
     ''' Creates threads for each individual token in the query '''
@@ -109,7 +140,11 @@ def run_search():
     search_query = user_query.lower()
     search_query = search_query.split()
     search_query = [ps.stem(item) for item in search_query]
+
+    # query_scores = calculate_query_scores(search_query)
+
     values.clear()
+    tf_idf.clear()
 
 
     # threads = create_threads(search_query)
@@ -123,9 +158,15 @@ def run_search():
 
     for word in search_query:
         start_temp_time = time.time()
+
         get_postings(word)
+
+        #cosine_similarity(query_scores, values)
+
         end_temp_time = time.time()
         start += (end_temp_time - start_temp_time)
+
+    print(create_big_dict(search_query, intersect_doc_ids()))
 
     runtime = start * 1000
 
@@ -143,6 +184,7 @@ if __name__ == '__main__':
     # --- Load index of tokens mapped to the file's line. --- # 
     #     This prevents loading entire index to memory.       #
     values = {}
+    tf_idf = {}
 
     ps = PorterStemmer()    # Stems tokens in user query
 

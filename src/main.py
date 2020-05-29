@@ -12,6 +12,8 @@ from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
 from PartA import computeWordFrequencies
 from partial_indexer import merge_indexes
+from ranking import compute_tf_idf
+from normalize import normalize
 
 # ---------- Global Variables ---------- #
 
@@ -168,7 +170,24 @@ if __name__ == '__main__':
     piFour.close()
     pmi.close()
     pmi2.close()
-    
 
-    print('Number of documents: {}'.format(doc_id_counter-1))
-    print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))
+    N = doc_id_counter - 1
+    #unique_tokens = 
+
+    print('Number of documents: {}'.format(N)
+
+    #print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))
+
+    # Index the index
+    i = create_index_for_index()
+    with open('index_for_index.txt','w') as index_index:
+        json.dump(i, index_index)
+
+    # Compute tf-idfs
+    compute_tf_idf(N)
+    
+    # Normalize tf-idfs
+    with open('index_for_index.txt','r') as index_index:
+        index_for_index = json.load(index_index)
+    normalize()
+    
