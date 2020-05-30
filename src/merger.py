@@ -93,13 +93,13 @@ def merge_indexes(counter, f1, f2):
     m.close()
 
 
-if __name__ == '__main__':
-    f11 = open('partials/partial_index1.txt', 'r')
-    f22 = open('partials/partial_index2.txt', 'r')
-    f33 = open('partials/partial_index3.txt', 'r')
-    merge_indexes(1,f11,f22)
-    m1 = open('merge1.txt','r')
-    merge_indexes(2,m1,f33)
+# if __name__ == '__main__':
+#     f11 = open('partials/partial_index1.txt', 'r')
+#     f22 = open('partials/partial_index2.txt', 'r')
+#     f33 = open('partials/partial_index3.txt', 'r')
+#     merge_indexes(1,f11,f22)
+#     m1 = open('merges/merge1.txt','r')
+#     merge_indexes(2,m1,f33)
     
 
 

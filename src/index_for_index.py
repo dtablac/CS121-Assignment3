@@ -11,26 +11,26 @@ This way, for each query term, we can jump straight it in the index.
 
 """
 
-def create_index_for_index()->dict:
+def create_index_for_index(index_to_index: str)->dict:
+    ''' Input: Current index to be indexed '''
     index_of_index = {}
-    print('Writing index for index ...')
-    with open('final_index_2.txt','r') as index:
+    print('Writing index for {} ...'.format(index_to_index))
+    with open(index_to_index,'r') as index:
         while True:
             try:
                 current_fp = index.tell()    # current file position 
                 line = ast.literal_eval(index.readline())  # reads line then advances fp
                 token = line[0]
-                #print(token)
                 index_of_index[token] = current_fp    # map token to fp
             except SyntaxError:    # EOF
                 print('Done.')
-                print("Index for index in 'index_for_index.txt'")
+                print("Index for index in 'index/index_for_index.txt'")
                 break
     return index_of_index
 
-if __name__ == '__main__':
-    i = create_index_for_index()
-    with open('index_for_index.txt','w') as index_index:
-        json.dump(i, index_index)
+# if __name__ == '__main__':
+#     i = create_index_for_index()
+#     with open('index_for_index.txt','w') as index_index:
+#         json.dump(i, index_index)
     
 

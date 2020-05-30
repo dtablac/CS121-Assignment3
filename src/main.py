@@ -1,194 +1,160 @@
-# main.py
-# Dan Tablac: 59871000
-# Anthony Esmeralda: 45111521
-
-import os
-import sys
+import ast
 import json
+import time
+import threading
 import re
-import sys
 import string
 from nltk.stem import PorterStemmer
-from bs4 import BeautifulSoup
-from PartA import computeWordFrequencies
-from partial_indexer import merge_indexes
-from ranking import compute_tf_idf
-from normalize import normalize
-from index_for_index import create_index_for_index
+from cosine_similarity import *
+from flask import Flask, request, render_template
 
-# ---------- Global Variables ---------- #
+app = Flask(__name__)
 
-doc_id_counter = 1    # Unique doc_id counter
+def get_postings(token):
+    with open('index/index.txt','r') as index:
+        try:
+            fp = index_of_index[token]
+            index.seek(fp)
+            line = ast.literal_eval(index.readline())
+            if token == line[0]:
+                values[token] = list(line[1].items())
+                tf_idf[token] = line[1]    # dict of tokens as keys, dicts as values (doc_id: tf-idf)
+        except KeyError: # index_of_index key error
+            return []
 
-inverted_index = dict()      # Store word(str) -> posting(list) pairings.
+def create_big_dict(tokens, doc_ids):
+    if doc_ids == None:
+        return None
+    big_dict = {}
+    for token in tokens:
+        big_dict[token] = {}
+        for doc_id in doc_ids:
+            big_dict[token][doc_id] = tf_idf[token][doc_id]
+    return big_dict
+        
 
-doc_ids = dict()    # Store doc_id -> doc_name pairings
+def intersect_doc_ids():
+    posting_lengths = {}
+    for key in values.keys():
+        posting_lengths[key] = len(values[key])
+    posting_lengths = sorted(list(posting_lengths.items()), key=lambda item: item[1])       # sort the posting lengths by smallest to greatest.
 
-ps = PorterStemmer()
-# ---------- Index Implementation ---------- #
+    if len(posting_lengths) > 0:
+        token = posting_lengths[0][0]                                  # get the first token in our posting length since format is of [(t1, l1),(t2, l2),(t3, l3)]
+        intersected = [item[0] for item in values[ token ]]             # value[token] = (docid, tf-idf); so we want to get item[0] cause we want doc id.
+        if (len(posting_lengths) > 1):                                  # if there are more tokens in posting length then...
+            for posting in posting_lengths[1:]:                          # do every token except the first one
+                temp_list = []                                           # create a temp list.                       
+                token = posting[0]                                       # store the new token to be found
+                temp_list = [item[0] for item in values[token]]          # our temp list will have their doc_ids
+                intersected = list(set(temp_list) & set(intersected))
+        return intersected
+    else:
+        return None
 
-# store postings in python STL list as [ [doc_id, token_frequency], ... ]
+def show_urls(scores: dict):
+    ''' Prints the top 5 urls from the search (AND only) '''
+    global values, doc_ids
+    if scores == None or len(scores) == 0:
+        return None
+    big_list = sorted(list(scores.items()), key=lambda item: item[1])
+    results = []
+    for items in big_list:
+        url = doc_ids[str(items[0])]
+        if '#' not in url:
+            results.append(doc_ids[str(items[0])])
+    return results[:5]
 
-#class Posting:
-#    def __init__(self, id, score):
-#        self.id = id                # document id that token was found (from doc_ids)
-#        self.score = score          # "tf_ifd score"
-#
-#    def __repr__(self):
-#        return str('(doc_id: {}, score: {})'.format(self.id, self.score))
+### -------------------------- Helper Functions -------------------------- ###
 
-# ------------------------------------------ #
+def _list_doc_ids(postings: list):
+    ''' Get doc_ids [x,x2,...] from posting list [[x,y],[x2,y2],...] '''
+    doc_ids = []
+    for posting in postings:
+        doc_ids.append(posting[0])
+    return doc_ids
 
-def _assign_doc_id(document):
-    ''' Assign document id to a document. '''
-    global doc_ids
-    global doc_id_counter
+def _render_response(result: list):
+    ''' Formats top 5 urls for page render '''
 
-    doc_ids[doc_id_counter] = document
-    returning_doc_id = doc_id_counter    # temp store of original doc_id before incrementing
-    doc_id_counter += 1
-    return returning_doc_id
+    # --- Format the urls as html list --- #
+    if result == None:
+        html_result = "<h3>No search results found</h3>"
+    else:
+        html_result = '<div class="fade"><ol class="results">'
+        for i in range(len(result)):
+            html_result += '<li><a href={}>{}</a></li>'.format(result[i], result[i])
+        html_result += '</ol></div>'
 
-#def _add_posting(token, id):
-#    ''' Adds/updates a posting, of the token's occurence in a document (id), in the inverted index '''
-#    global inverted_index
-#    token2 = token.lower()                                  # O(w)
-#    posting_updated = False
-#    try:
-#        for posting in inverted_index[token2]:              # O(b)
-#            if posting.id == id:
-#                posting.score += 1
-#                posting_updated = True
-#                break
-#        if posting_updated == False:
-#            inverted_index[token2].append(Posting(id, 1))
-#    except KeyError:
-#        inverted_index[token2] = []
-#        inverted_index[token2].append(Posting(id, 1))
+    # --- Rewrite html template --- # (index.html includes results.html)
+    result_file = open('templates/results.html','w')
+    result_file.write(html_result)
+    result_file.close()
 
-def _add_posting(freq_list, id):
-    global inverted_index
-    for key, value in freq_list.items():
-        if key not in inverted_index:
-            inverted_index[key] = {}
-            inverted_index[key][id] = value
-        else:
-            inverted_index[key][id] = value
+### -------------------------- API Endpoints -------------------------- ###
 
-def _offload_index(offload_counter):
-    with open("partials/partial_index" + str(offload_counter) + ".txt", 'w') as output:
-        ''' json.dump(inverted_index,output) '''
-        sorted_inverted_index = sorted(inverted_index.items(), key= lambda kv: kv[0])
-        for item in sorted_inverted_index:
-            output.write(str(item) + '\n')
-        inverted_index.clear()
+# --- Home page loads on first visit or home url entered in browser --- #
+@app.route('/')
+def main():
+    result_file = open('templates/results.html','w')
+    result_file.write('')
+    result_file.close()
+    return render_template('index.html')
 
+# --- Flask routes POST requests made from index.html --- #
+@app.route('/', methods=['POST'])
+def run_search():
+    user_query = request.form['search']    # Contents of search bar
 
+    # --- Do stuff with search query --- #
+    search_query = user_query.lower()
+    search_query = search_query.translate(str.maketrans(string.punctuation,' ' * len(string.punctuation)))
+    search_query = search_query.split()
+    search_query = [ps.stem(item) for item in search_query]
 
-def access_json_files(root):
-    ''' Access each domain folder and their respected json files. '''
-    # directory concept: https://realpython.com/working-with-files-in-python/#listing-all-files-in-a-directory
-    # json concept: https://www.geeksforgeeks.org/read-json-file-using-python/
-    # re and BeautifulSoup documentations referenced
+    start_time = time.time()
+    start = 0
 
-    corpus = os.listdir(root)    # list containing each domain in 'DEV'
-    
-    # --- Check each domain (folder) --- #
-    counter = 0
-    offload_counter = 1
+    if len(search_query) == 0:
+        _render_response(None)
+    else: 
+        query_scores = calculate_query_scores(search_query)
+        values.clear()
+        tf_idf.clear()
 
-    for domain in corpus:
-        if os.path.isdir(os.path.join(root, domain)):  # Only get folders. Ignores .DS_Store in mac
-            print('----------{}----------'.format(domain))  # just for showing which urls belong to what
-            sub_dir = '{}/{}'.format(root,domain)           # Path to domain within root
-            pages = os.listdir(sub_dir)                     # list json files, or 'pages', in domain
-            for page in pages:
-                counter += 1
-                #id = _assign_doc_id(page)                          # give json file a unique doc_id
-                json_file_location = sub_dir + '/{}'.format(page)   # Path to page
+        for word in search_query:
 
-                file = open(json_file_location, 'r')                # open JSON file
-                data = json.load(file)                              # JSON object becomes dict
-                file.close()
+            get_postings(word)
 
-                # --- Do Stuff with the data --- #
-                id = _assign_doc_id(data['url'])                    # give a unique doc_id to our url
-                soup = BeautifulSoup(data['content'], 'html.parser')
-                token_string = soup.get_text()
-                tokens = tokenize(token_string)
-                tokens = [ps.stem(token) for token in tokens]
-                freq_list = computeWordFrequencies(tokens)
-                _add_posting(freq_list,id)
-                if counter % 1000 == 0:
-                    print("encountered {} pages".format(counter))
-                if counter >= 15000:
-                    counter = 0
-                    ''' off load here '''
-                    print("offloading index into partial index")
-                    _offload_index(offload_counter)
-                    offload_counter += 1
+        big_dict = create_big_dict(search_query, intersect_doc_ids())
+        scores = get_cosine_similarity_list(query_scores,big_dict)
 
+        # --- Update 'results.html' template with urls found --- #
+        _render_response(show_urls(scores))
 
-# ------------------------------------------ #
-# --------------- tokenizing-----------------#
+    end_time = time.time()
+    timer = (end_time - start_time)
+    runtime = timer * 1000
+    timestamp = 'Retrieved in {} ms.'.format(runtime)
 
-def tokenize(token_string) -> list:
-    more_restrictful_alphanum = re.compile(r'^[0-9A-Za-z]*$')               # alphanum() allows non-english characters
-    tokens = []
-    token_string = token_string.translate(str.maketrans(string.punctuation,' ' * len(string.punctuation)))   # treat all punctuation's as spaces.
-    token_string = token_string.split()                                               # convert our string into a list of tokens.
-    for token in token_string:                                                   # iterate through our raw tokens
-        if len(token) >= 2 and more_restrictful_alphanum.match(token):      # only add the "token" to our tokens list if
-            tokens.append(token.lower())                                    # it satisfies our constraint
-    return tokens      
+    # --- Render results (check index.html), query, and time --- #
+    return render_template('index.html', query=user_query, time=timestamp)
+
+### ---------- Main ---------- ###
 
 if __name__ == '__main__':
-    access_json_files('../DEV') # 'DEV' directory contains domains (extract developer.zip first)
+    # --- Load index of tokens mapped to the file's line. --- # 
+    #     This prevents loading entire index to memory.       #
+    values = {}
+    tf_idf = {}
 
-    print('Writing doc_ids to txt...')
-    with open('doc-ids.txt','w') as output1:
-        json.dump(doc_ids, output1)
-    print('Done.')
+    ps = PorterStemmer()    # Stems tokens in user query
 
-    piOne = open('partials/partial_index1.txt', 'r')
-    piTwo = open('partials/partial_index2.txt', 'r')
-    piThree = open('partials/partial_index3.txt', 'r')
+    with open('index/index_for_index.txt','r') as index_index:
+        index_of_index = json.load(index_index) 
 
-    merge_indexes(1,piOne,piTwo)
-    pmi = open('merges/merge1.txt','r')
-    merge_indexes(2,pmi,piThree)
+    doc_ids_file = open('index/doc-ids.txt','r')    # Load doc-ids for URL ref
+    doc_ids = json.load(doc_ids_file)
+    doc_ids_file.close()
 
-    ''' offload the rest of the index '''
-    if len(inverted_index) != 0:
-        _offload_index(4)
-        piFour = open('partials/partial_index4.txt','r')
-        pmi2 = open('merges/merge2.txt','r')
-        merge_indexes(3,pmi2,piFour)
-
-    piOne.close()
-    piTwo.close()
-    piThree.close()
-    piFour.close()
-    pmi.close()
-    pmi2.close()
-
-    N = doc_id_counter - 1
-    #unique_tokens = 
-
-    print('Number of documents: {}'.format(N))
-
-    #print('Unique tokens: {}'.format(len(list(inverted_index.keys()))))
-
-    # Index the index
-    i = create_index_for_index()
-    with open('index_for_index.txt','w') as index_index:
-        json.dump(i, index_index)
-
-    # Compute tf-idfs
-    compute_tf_idf(N)
-    
-    # Normalize tf-idfs
-    with open('index_for_index.txt','r') as index_index:
-        index_for_index = json.load(index_index)
-    normalize()
-    
+    app.run(debug=True)
