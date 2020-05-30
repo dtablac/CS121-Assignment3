@@ -34,7 +34,7 @@ def compute_tf_idf(N: int):
                 postings = dict(line[1]) # dict
                 for doc, tf in postings.items():
                     df = len(postings)
-                    new_postings[doc] = _calculate_tf_idf(tf, N, df)
+                    new_postings[doc] = calculate_tf_idf(tf, N, df)
                 new_tuple = (token, new_postings)
                 temp_index.write(str(new_tuple)+'\n')
             except SyntaxError:

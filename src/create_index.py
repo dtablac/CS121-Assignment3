@@ -106,6 +106,7 @@ def access_json_files(root):
 
 if __name__ == '__main__':
     # ---------- Initial Variables ---------- #
+
     doc_id_counter = 1    # Unique doc_id counter
     seen = set()
     inverted_index = dict()      # { token: { doc_id: tf } }
@@ -153,7 +154,7 @@ if __name__ == '__main__':
     pmi2.close()
 
     print('Done.')
-
+ 
     # ----- merge3.txt (tentative index is created) ----- # 
 
     ### ----- Change term frequencies in tentative index to idf----- ###

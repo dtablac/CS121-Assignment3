@@ -11,16 +11,23 @@ from flask import Flask, request, render_template
 app = Flask(__name__)
 
 def get_postings(token):
-    with open('index/index.txt','r') as index:
-        try:
-            fp = index_of_index[token]
-            index.seek(fp)
-            line = ast.literal_eval(index.readline())
-            if token == line[0]:
-                values[token] = list(line[1].items())
-                tf_idf[token] = line[1]    # dict of tokens as keys, dicts as values (doc_id: tf-idf)
-        except KeyError: # index_of_index key error
-            return []
+    if token in cache:
+        values[token] = cache[token]
+        tf_idf[token] = tf_idf_cache[token]
+    else:
+        with open('index/index.txt','r') as index:
+            try:
+                fp = index_of_index[token]
+                index.seek(fp)
+                line = ast.literal_eval(index.readline())
+                if token == line[0]:
+                    values[token] = list(line[1].items())                   
+                    tf_idf[token] = line[1]    # dict of tokens as keys, dicts as values (doc_id: tf-idf)
+                if token in common_words:
+                    cache[token] = values[token]
+                    tf_idf_cache[token] = tf_idf[token]
+            except KeyError: # index_of_index key error
+                return []
 
 def create_big_dict(tokens, doc_ids):
     if doc_ids == None:
@@ -123,8 +130,8 @@ def run_search():
         tf_idf.clear()
 
         for word in search_query:
-
-            get_postings(word)
+            if word not in values:
+                get_postings(word)
 
         big_dict = create_big_dict(search_query, intersect_doc_ids())
         scores = get_cosine_similarity_list(query_scores,big_dict)
@@ -147,9 +154,16 @@ if __name__ == '__main__':
     #     This prevents loading entire index to memory.       #
     values = {}
     tf_idf = {}
-
+    tf_idf_cache = {}
+    cache = {}
+    common_words = []       # common word will hold 1000 common words to cache. 
     ps = PorterStemmer()    # Stems tokens in user query
 
+    with open('common/words.txt', 'r') as common:
+        common_words = common.readlines()
+
+    common_words = [word.rstrip('\n') for word in common_words]
+    common_words = [ps.stem(word) for word in common_words]
     with open('index/index_for_index.txt','r') as index_index:
         index_of_index = json.load(index_index) 
 

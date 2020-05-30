@@ -47,9 +47,9 @@ def normalize(index_for_index):
                     curr_region = str(token[0])
                     print('Normalizing tf-idfs for tokens starting with: {}'.format(curr_region))
 
-                denominator = _calculate_denominator(_get_tf_idf_list(token, index_for_index))
+                denominator = calculate_denominator(get_tf_idf_list(token, index_for_index))
                 for doc, tf_idf in postings.items():
-                    normalized_postings[doc] = _calculate_normalized(tf_idf, denominator)
+                    normalized_postings[doc] = calculate_normalized(tf_idf, denominator)
                 new_tuple = (token, normalized_postings)
                 final_index.write(str(new_tuple) + '\n')
             except SyntaxError:
