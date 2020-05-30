@@ -18,7 +18,7 @@ To create the index on the collection, navigate to the src folder and run:
 
     python3 create_index.py
   
-Run the search engine and open your web browser to http://localhost:5000
+Run the search engine with this command and open your web browser to http://localhost:5000
 
     python3 main.py
   
