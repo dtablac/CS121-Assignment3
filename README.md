@@ -12,7 +12,7 @@ Dependencies (pip install):
 
 Please unzip this folder (corpus of webpages) in the same directory as src:
 
-    https://drive.google.com/file/d/1WQVzu6Bctv4M8jKGA56hOhVJcKImxiy2/view?usp=sharing
+  - https://drive.google.com/file/d/1WQVzu6Bctv4M8jKGA56hOhVJcKImxiy2/view?usp=sharing
 
 To create the index on the collection, navigate to the src folder and run:
 
